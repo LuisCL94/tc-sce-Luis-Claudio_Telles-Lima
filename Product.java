@@ -14,13 +14,14 @@ public class Product implements ActionListener {
 	private JLabel lblSistemaDeControle = new JLabel();
 	private JScrollPane scrollPane = new JScrollPane();
 	private JTable table = new JTable();
+  private DefaultTableModel model = new DefaultTableModel();
 	private JButton registerButton = new JButton();
 	private JButton editButton = new JButton();
 	private JButton deleteButton = new JButton();
 	private JButton addStockButton = new JButton();
 	private JButton removeStockButton = new JButton();
 	private JButton updateProductStockButton = new JButton();
-	private JButton backButton = new JButton();
+  private JButton RegisterEditSaveButton = new JButton();
 	private JLabel idLabel = new JLabel();
 	private JTextField idTextField;
 	private JTextField productTextField;
@@ -79,26 +80,16 @@ public class Product implements ActionListener {
 		scrollPane.setBounds(10, 59, 632, 302);
 		stockViewPanel.add(scrollPane);
 		
-		table.setModel(new DefaultTableModel(
-			new Object[][] {
-				{null, null, null, null},
-			},
-			new String[] {
-				"ID", "Produto", "Quantidade em Estoque", "Preco Unitario"
-			}
-		) {
-			boolean[] columnEditables = new boolean[] {
-				false, false, false, false
-			};
-			public boolean isCellEditable(int row, int column) {
-				return columnEditables[column];
-			}
-		});
-		table.getColumnModel().getColumn(0).setResizable(false);
+    Object[] columns = {"ID", "Produto", "Quantidade em Estoque", "Preco Unitario"};
+    model.setColumnIdentifiers(columns);
+    table.setModel(model);
+		
+    table.getColumnModel().getColumn(0).setResizable(false);
 		table.getColumnModel().getColumn(1).setResizable(false);
 		table.getColumnModel().getColumn(2).setResizable(false);
 		table.getColumnModel().getColumn(3).setResizable(false);
 		scrollPane.setViewportView(table);
+
 		registerButton.setToolTipText("Cadastrar novo produto");
 		
 		registerButton.setText("CADASTRAR"); 
@@ -133,13 +124,10 @@ public class Product implements ActionListener {
 		layeredPane.add(productRegisterEditPanel, "name_1131935827357");
 		productRegisterEditPanel.setLayout(null);
 		
-		JButton productRegisterEditButton = new JButton("SALVAR");
-		productRegisterEditButton.setBounds(255, 374, 117, 25);
-		productRegisterEditPanel.add(productRegisterEditButton);
+		RegisterEditSaveButton.setText("SALVAR");
+		RegisterEditSaveButton.setBounds(255, 374, 117, 25);
+		productRegisterEditPanel.add(RegisterEditSaveButton);
 		
-		backButton.setText("VOLTAR");
-		backButton.setBounds(255, 424, 117, 25);
-		productRegisterEditPanel.add(backButton);
 		idLabel.setBounds(110, 94, 70, 15);
 		idLabel.setText("Codigo:");
 		
@@ -184,25 +172,58 @@ public class Product implements ActionListener {
 		
 		registerButton.addActionListener(this);
 		editButton.addActionListener(this);
-		backButton.addActionListener(this);
-		
+		RegisterEditSaveButton.addActionListener(this);
+    deleteButton.addActionListener(this);
+
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
 	
 	public void actionPerformed(ActionEvent e) {
+
 		if(e.getSource().equals(registerButton)) {
 			border.setTitle("Cadastro de Produto");
 			switchPanels(productRegisterEditPanel);
 		}
 		
-		else if(e.getSource().equals(editButton)) {
-			border.setTitle("Edicao de Produto");
-			switchPanels(productRegisterEditPanel);
+		if(e.getSource().equals(editButton)) {
+      int i = table.getSelectedRow();
+      if(i>=0) {
+        border.setTitle("Edicao de Produto");
+        switchPanels(productRegisterEditPanel);
+      }
+      else 
+        JOptionPane.showMessageDialog(null,
+          "Selecione o produto que deseja editar", "",
+          JOptionPane.WARNING_MESSAGE);
 		}
+
+    if(e.getSource().equals(deleteButton)) {
+			int i = table.getSelectedRow();
+      if(i>=0)
+        model.removeRow(i);
+      else
+        JOptionPane.showMessageDialog(null,
+          "Selecione o produto que deseja excluir", "",
+          JOptionPane.WARNING_MESSAGE);
+    }
 		
-		else if(e.getSource().equals(backButton)) {
-			switchPanels(stockViewPanel);
+    if(e.getSource().equals(RegisterEditSaveButton)) {
+			Object[] row = {idTextField.getText(), productTextField.getText(), 
+        quantitySpinner.getValue(), priceTextField.getText()};
+      
+      JOptionPane.showMessageDialog(null,
+        "Cadastro de produto realizado", "",
+        JOptionPane.INFORMATION_MESSAGE);
+      
+      idTextField.setText(null);
+      productTextField.setText(null);
+      quantitySpinner.setValue(0);
+      priceTextField.setText(null);
+
+      model.addRow(row);
+      switchPanels(stockViewPanel);
 		}
+
 	}
 }
