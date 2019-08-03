@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class Product implements ActionListener {
 	private JFrame frame = new JFrame();
@@ -14,25 +15,28 @@ public class Product implements ActionListener {
 	private JLabel lblSistemaDeControle = new JLabel();
 	private JScrollPane scrollPane = new JScrollPane();
 	private JTable table = new JTable();
-  private DefaultTableModel model = new DefaultTableModel();
+	private DefaultTableModel model = new DefaultTableModel();
 	private JButton registerButton = new JButton();
 	private JButton editButton = new JButton();
 	private JButton deleteButton = new JButton();
 	private JButton addStockButton = new JButton();
 	private JButton removeStockButton = new JButton();
 	private JButton updateProductStockButton = new JButton();
-  private JButton RegisterEditSaveButton = new JButton();
-  private JButton backButton = new JButton();
+	private JButton RegisterEditSaveButton = new JButton();
+	private JButton backButton = new JButton();
 	private JLabel idLabel = new JLabel();
 	private JTextField idTextField;
-  private JLabel productLabel = new JLabel();
+	private JLabel productLabel = new JLabel();
 	private JTextField productTextField;
 	private JLabel quantityLabel = new JLabel();
 	private JSpinner quantitySpinner = new JSpinner();
 	private JLabel priceLabel = new JLabel();
+	private final JLabel R$Label = new JLabel();
 	private JTextField priceTextField = new JTextField();
 	private TitledBorder border = new TitledBorder("");
 	private JPanel borderRegisterEditPanel = new JPanel();
+	
+	DataBaseConnect connection = new DataBaseConnect();
 	
 	public void switchPanels(JPanel panel) {
 		layeredPane.removeAll();
@@ -57,8 +61,8 @@ public class Product implements ActionListener {
 	 * Create the frame.
 	 */
 	public Product() {
-		priceTextField.setBounds(306, 183, 114, 20);
-		priceTextField.setColumns(10);
+		connection.connect();
+
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setBounds(100, 100, 652, 554);
 		frame.setTitle("Sistema de Controle de Estoque");
@@ -66,7 +70,7 @@ public class Product implements ActionListener {
 		frame.setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		layeredPane.setBounds(0, 0, 652, 515);
+		layeredPane.setBounds(12, 0, 628, 515);
 		contentPane.add(layeredPane);
 		layeredPane.setLayout(new CardLayout(0, 0));
 		
@@ -77,14 +81,18 @@ public class Product implements ActionListener {
 		lblSistemaDeControle.setBounds(230, 29, 245, 14);
 		stockViewPanel.add(lblSistemaDeControle);
 		
-		scrollPane.setBounds(10, 59, 632, 302);
+		scrollPane.setBounds(0, 59, 628, 302);
 		stockViewPanel.add(scrollPane);
 		
-    Object[] columns = {"ID", "Produto", "Quantidade em Estoque", "Preco Unitario"};
+    Object[] columns = {"ID", "Produto", "Estoque", "R$ Preco Unitario"};
     model.setColumnIdentifiers(columns);
     table.setDefaultEditor(Object.class, null);
 		table.setFocusable(false);
     table.setModel(model);
+    
+    DefaultTableCellRenderer renderer = (DefaultTableCellRenderer)table.getDefaultRenderer(Object.class);
+    renderer.setHorizontalAlignment( SwingConstants.CENTER );
+    
     scrollPane.setViewportView(table);
 
 		registerButton.setToolTipText("Cadastrar novo produto");
@@ -102,11 +110,13 @@ public class Product implements ActionListener {
 		deleteButton.setText("EXCLUIR");
 		deleteButton.setBounds(350, 419, 115, 23);
 		stockViewPanel.add(deleteButton);
+		//addStockButton.setIcon(new ImageIcon(getClass().getResource("Icons/add2.png")));
 		addStockButton.setIcon(new ImageIcon("Icons/add2.png"));
 		addStockButton.setToolTipText("adicionar estoque");
 		
 		addStockButton.setBounds(500, 410, 55, 23);
 		stockViewPanel.add(addStockButton);
+		//removeStockButton.setIcon(new ImageIcon(getClass().getResource("Icons/minus2.png")));
 		removeStockButton.setIcon(new ImageIcon("Icons/minus2.png"));
 		removeStockButton.setToolTipText("revomer estoque");
 		
@@ -120,45 +130,6 @@ public class Product implements ActionListener {
 		
 		layeredPane.add(productRegisterEditPanel, "name_1131935827357");
 		productRegisterEditPanel.setLayout(null);
-		
-		RegisterEditSaveButton.setText("SALVAR");
-		RegisterEditSaveButton.setBounds(255, 374, 117, 25);
-		productRegisterEditPanel.add(RegisterEditSaveButton);
-		
-		idLabel.setBounds(110, 94, 70, 15);
-		idLabel.setText("Codigo:");
-		
-		productRegisterEditPanel.add(idLabel);
-		
-		idTextField = new JTextField();
-		idTextField.setBounds(110, 110, 114, 20);
-		productRegisterEditPanel.add(idTextField);
-		idTextField.setColumns(10);
-		
-		productLabel.setText("Produto"); 
-		productLabel.setBounds(293, 94, 243, 15);
-		productRegisterEditPanel.add(productLabel);
-		
-		productTextField = new JTextField();
-		productTextField.setBounds(293, 110, 243, 20);
-		productRegisterEditPanel.add(productTextField);
-		productTextField.setColumns(10);
-		quantityLabel.setBounds(126, 165, 98, 15);
-		
-		quantityLabel.setText("Quantidade");
-		
-		productRegisterEditPanel.add(quantityLabel);
-		quantitySpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
-		quantitySpinner.setBounds(126, 183, 87, 20);
-		
-		productRegisterEditPanel.add(quantitySpinner);
-		
-		priceLabel.setBounds(308, 165, 112, 15);
-		priceLabel.setText("Preco Unitario");
-		
-		productRegisterEditPanel.add(priceLabel);
-		
-		productRegisterEditPanel.add(priceTextField);
 		borderRegisterEditPanel.setBounds(12, 30, 628, 291);
 		
 		productRegisterEditPanel.add(borderRegisterEditPanel);
@@ -167,6 +138,45 @@ public class Product implements ActionListener {
 		border.setTitlePosition(TitledBorder.TOP);
 	   
 		borderRegisterEditPanel.setBorder(border);
+		borderRegisterEditPanel.setLayout(null);
+		R$Label.setText("R$");
+		R$Label.setBounds(294, 157, 32, 15);
+		borderRegisterEditPanel.add(R$Label);
+		priceTextField.setBounds(318, 158, 114, 20);
+		borderRegisterEditPanel.add(priceTextField);
+		priceTextField.setColumns(10);
+		quantitySpinner.setBounds(110, 158, 87, 20);
+		borderRegisterEditPanel.add(quantitySpinner);
+		quantitySpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
+		
+		idTextField = new JTextField();
+		idTextField.setBounds(96, 90, 114, 20);
+		borderRegisterEditPanel.add(idTextField);
+		idTextField.setColumns(10);
+		
+		productTextField = new JTextField();
+		productTextField.setBounds(284, 90, 243, 20);
+		borderRegisterEditPanel.add(productTextField);
+		productTextField.setColumns(10);
+		productLabel.setBounds(284, 70, 243, 15);
+		borderRegisterEditPanel.add(productLabel);
+		
+		productLabel.setText("Produto");
+		idLabel.setBounds(96, 70, 70, 15);
+		borderRegisterEditPanel.add(idLabel);
+		idLabel.setText("Codigo:");
+		priceLabel.setBounds(318, 138, 112, 15);
+		borderRegisterEditPanel.add(priceLabel);
+		priceLabel.setText("Preco Unitario");
+		quantityLabel.setBounds(110, 138, 98, 15);
+		borderRegisterEditPanel.add(quantityLabel);
+		
+		quantityLabel.setText("Quantidade");
+    
+    RegisterEditSaveButton.setText("SALVAR");
+    RegisterEditSaveButton.setBounds(255, 374, 117, 25);
+    productRegisterEditPanel.add(RegisterEditSaveButton);
+    RegisterEditSaveButton.addActionListener(this);
 		
     backButton.setText("VOLTAR");
 		backButton.setBounds(255, 419, 117, 25);
@@ -174,7 +184,6 @@ public class Product implements ActionListener {
 		
 		registerButton.addActionListener(this);
 		editButton.addActionListener(this);
-		RegisterEditSaveButton.addActionListener(this);
     backButton.addActionListener(this);
     deleteButton.addActionListener(this);
     addStockButton.addActionListener(this);
@@ -230,6 +239,10 @@ public class Product implements ActionListener {
     }
 		
     if(e.getSource().equals(RegisterEditSaveButton)) {
+      // int value = Integer.parseInt(priceTextField.getText());
+      // int stock = (Integer)quantitySpinner.getValue();
+      // int result = value * stock;
+
 			Object[] row = {idTextField.getText(), productTextField.getText(), 
         quantitySpinner.getValue(), priceTextField.getText()};
       
@@ -241,6 +254,7 @@ public class Product implements ActionListener {
            "",JOptionPane.ERROR_MESSAGE);
         }
         else {
+        int i = table.getSelectedRow();
         JOptionPane.showMessageDialog(null,
           "Cadastro de produto realizado", "",
           JOptionPane.INFORMATION_MESSAGE);
@@ -271,8 +285,8 @@ public class Product implements ActionListener {
     if(e.getSource().equals(addStockButton)) {
       int i = table.getSelectedRow();
       if(i>=0) {
-        int value = Integer.parseInt(model.getValueAt(i, 2).toString());
-        model.setValueAt(++value, i, 2);
+        int num = Integer.parseInt(model.getValueAt(i, 2).toString());
+        model.setValueAt(++num, i, 2);
       }
       else
         JOptionPane.showMessageDialog(null,
@@ -284,9 +298,9 @@ public class Product implements ActionListener {
       int i = table.getSelectedRow();
 
       if(i>=0) {
-        int value = Integer.parseInt(model.getValueAt(i, 2).toString());
-        if(value>=1)
-          model.setValueAt(--value, i, 2);
+        int num = Integer.parseInt(model.getValueAt(i, 2).toString());
+        if(num>=1)
+          model.setValueAt(--num, i, 2);
       }
       else 
         JOptionPane.showMessageDialog(null,
@@ -299,6 +313,5 @@ public class Product implements ActionListener {
         "Estoque de produtos atualizado!", "",
         JOptionPane.INFORMATION_MESSAGE);
     }
-
   }
 }
