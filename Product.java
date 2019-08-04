@@ -2,12 +2,15 @@ import javax.swing.*;
 import javax.swing.event.*; 
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public class Product implements ActionListener {
-	private JFrame frame = new JFrame();
+	JFrame frame = new JFrame();
 	private JLayeredPane layeredPane = new JLayeredPane();
 	private JPanel contentPane = new JPanel();
 	private JPanel stockViewPanel = new JPanel();
@@ -24,6 +27,7 @@ public class Product implements ActionListener {
 	private JButton updateProductStockButton = new JButton();
 	private JButton RegisterEditSaveButton = new JButton();
 	private JButton backButton = new JButton();
+	private JButton outButton = new JButton();
 	private JLabel idLabel = new JLabel();
 	private JTextField idTextField;
 	private JLabel productLabel = new JLabel();
@@ -70,7 +74,7 @@ public class Product implements ActionListener {
 		frame.setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		layeredPane.setBounds(12, 0, 628, 515);
+		layeredPane.setBounds(0, 0, 636, 515);
 		contentPane.add(layeredPane);
 		layeredPane.setLayout(new CardLayout(0, 0));
 		
@@ -81,7 +85,7 @@ public class Product implements ActionListener {
 		lblSistemaDeControle.setBounds(230, 29, 245, 14);
 		stockViewPanel.add(lblSistemaDeControle);
 		
-		scrollPane.setBounds(0, 59, 628, 302);
+		scrollPane.setBounds(10, 59, 616, 302);
 		stockViewPanel.add(scrollPane);
 		
     Object[] columns = {"ID", "Produto", "Estoque", "R$ Preco Unitario"};
@@ -98,35 +102,39 @@ public class Product implements ActionListener {
 		registerButton.setToolTipText("Cadastrar novo produto");
 		
 		registerButton.setText("CADASTRAR"); 
-		registerButton.setBounds(71, 419, 115, 23);
+		registerButton.setBounds(41, 422, 115, 23);
 		stockViewPanel.add(registerButton);
 		editButton.setToolTipText("Editar produto");
 		
 		editButton.setText("EDITAR");;
-		editButton.setBounds(212, 419, 115, 23);
+		editButton.setBounds(182, 422, 115, 23);
 		stockViewPanel.add(editButton);
 		deleteButton.setToolTipText("Deletar produto");
 		
 		deleteButton.setText("EXCLUIR");
-		deleteButton.setBounds(350, 419, 115, 23);
+		deleteButton.setBounds(320, 422, 115, 23);
 		stockViewPanel.add(deleteButton);
-		//addStockButton.setIcon(new ImageIcon(getClass().getResource("Icons/add2.png")));
+		
 		addStockButton.setIcon(new ImageIcon("Icons/add2.png"));
 		addStockButton.setToolTipText("adicionar estoque");
 		
-		addStockButton.setBounds(500, 410, 55, 23);
+		addStockButton.setBounds(470, 413, 55, 23);
 		stockViewPanel.add(addStockButton);
-		//removeStockButton.setIcon(new ImageIcon(getClass().getResource("Icons/minus2.png")));
+		
 		removeStockButton.setIcon(new ImageIcon("Icons/minus2.png"));
 		removeStockButton.setToolTipText("revomer estoque");
 		
-		removeStockButton.setBounds(560, 410, 55, 23);
+		removeStockButton.setBounds(530, 413, 55, 23);
 		stockViewPanel.add(removeStockButton);
 		updateProductStockButton.setToolTipText("Atualizar estoque");
 		
 		updateProductStockButton.setText("SALVAR");
-		updateProductStockButton.setBounds(500, 440, 115, 23);
+		updateProductStockButton.setBounds(470, 443, 115, 23);
 		stockViewPanel.add(updateProductStockButton);
+		
+		outButton.setText("Sair");
+		outButton.setBounds(10, 481, 89, 23);
+		stockViewPanel.add(outButton);
 		
 		layeredPane.add(productRegisterEditPanel, "name_1131935827357");
 		productRegisterEditPanel.setLayout(null);
@@ -189,7 +197,7 @@ public class Product implements ActionListener {
     addStockButton.addActionListener(this);
     removeStockButton.addActionListener(this);
     updateProductStockButton.addActionListener(this);
-
+    outButton.addActionListener(this);
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
@@ -254,13 +262,24 @@ public class Product implements ActionListener {
            "",JOptionPane.ERROR_MESSAGE);
         }
         else {
-        int i = table.getSelectedRow();
-        JOptionPane.showMessageDialog(null,
-          "Cadastro de produto realizado", "",
-          JOptionPane.INFORMATION_MESSAGE);
-
-          model.addRow(row);
-          switchPanels(stockViewPanel);
+	        try {
+				PreparedStatement pst = connection.conn.prepareStatement("insert into product (product_name,product_stock,product_price)values(?,?,?)");
+				pst.setString(1,productTextField.getText());
+				pst.setInt(2,(int)quantitySpinner.getValue());
+				pst.setString(3,priceTextField.getText());
+				pst.executeUpdate();
+		        int i = table.getSelectedRow();
+		        
+		        JOptionPane.showMessageDialog(null,
+		          "Cadastro de produto realizado", "",
+		          JOptionPane.INFORMATION_MESSAGE);
+		          model.addRow(row);
+		       
+		          switchPanels(stockViewPanel);
+			} catch (SQLException e1) {
+				JOptionPane.showMessageDialog(null, ""+e1,
+				           "",JOptionPane.ERROR_MESSAGE);
+			}
         }
       }
       else {
@@ -312,6 +331,10 @@ public class Product implements ActionListener {
         JOptionPane.showMessageDialog(null,
         "Estoque de produtos atualizado!", "",
         JOptionPane.INFORMATION_MESSAGE);
+    }
+    if(e.getSource().equals(outButton)) {
+    	connection.disconnect();
+    	System.exit(0);	
     }
   }
 }
