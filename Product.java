@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -61,6 +62,26 @@ public class Product implements ActionListener {
     layeredPane.revalidate();
   }
 
+  public void fillTable(String SQL) {
+    ArrayList data = new ArrayList();
+    String[] columns = new String[] {"ID", "Produto", "Estoque", "R$ Preco Unitario"};
+    connection.runSQL("select * from products order by product_id");
+    try {
+      connection.rs.first();
+      do {
+        data.add(new Object[] {connection.rs.getInt("product_id"),
+            connection.rs.getString("product_name"), connection.rs.getInt("product_stock"),
+            connection.rs.getString("product_price"),});
+      } while (connection.rs.next());
+    } catch (SQLException ex) {
+      JOptionPane.showMessageDialog(null, "ERRO ao preecher Arr " + ex, "",
+          JOptionPane.ERROR_MESSAGE);
+    }
+
+    TableModel model = new TableModel(data, columns);
+    // table.setModel(model);
+  }
+
   public static void main(String[] args) {
     EventQueue.invokeLater(new Runnable() {
       public void run() {
@@ -79,6 +100,8 @@ public class Product implements ActionListener {
    */
   public Product() {
     connection.connect();
+    // fillTable("select * from products order by product_id");
+
 
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setBounds(100, 100, 652, 554);
@@ -103,6 +126,21 @@ public class Product implements ActionListener {
 
     Object[] columns = {"ID", "Produto", "Estoque", "R$ Preco Unitario"};
     model.setColumnIdentifiers(columns);
+
+    connection.runSQL("select * from products order by product_id");
+    try {
+      connection.rs.first();
+      do {
+        Object[] row = {connection.rs.getInt("product_id"), connection.rs.getString("product_name"),
+            connection.rs.getInt("product_stock"), connection.rs.getString("product_price")};
+        model.addRow(row);
+
+      } while (connection.rs.next());
+    } catch (SQLException ex) {
+      JOptionPane.showMessageDialog(null, "ERRO ao preecher Arr " + ex, "",
+          JOptionPane.ERROR_MESSAGE);
+    }
+
     table.setDefaultEditor(Object.class, null);
     table.setFocusable(false);
     table.setModel(model);
