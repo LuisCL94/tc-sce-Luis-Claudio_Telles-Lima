@@ -78,6 +78,14 @@ public class Product implements ActionListener {
     }
   }
 
+  public void updateTable() {
+    int rowCount = model.getRowCount();
+    for (int i = rowCount - 1; i >= 0; i--) {
+      model.removeRow(i);
+    }
+    fillTable();
+  }
+
   public static void main(String[] args) {
     EventQueue.invokeLater(new Runnable() {
       public void run() {
@@ -96,8 +104,6 @@ public class Product implements ActionListener {
    */
   public Product() {
     connection.connect();
-    // fillTable("select * from products order by product_id");
-
 
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setBounds(100, 100, 652, 554);
@@ -125,6 +131,7 @@ public class Product implements ActionListener {
     table.setDefaultEditor(Object.class, null);
     table.setFocusable(false);
     table.setModel(model);
+    fillTable();
 
     DefaultTableCellRenderer renderer =
         (DefaultTableCellRenderer) table.getDefaultRenderer(Object.class);
@@ -226,8 +233,6 @@ public class Product implements ActionListener {
     updateProductStockButton.addActionListener(this);
     outButton.addActionListener(this);
 
-    fillTable();
-
     frame.setLocationRelativeTo(null);
     frame.setVisible(true);
   }
@@ -277,12 +282,13 @@ public class Product implements ActionListener {
           pst.setString(1, (String) model.getValueAt(i, 1));
           pst.execute();
           JOptionPane.showMessageDialog(null,
-              (String) model.getValueAt(i, 1) + "excluido com sucesso!", "Banco de Dados",
+              (String) model.getValueAt(i, 1) + " excluido com sucesso!", "Banco de Dados",
               JOptionPane.INFORMATION_MESSAGE);
           model.removeRow(i);
         } catch (SQLException e1) {
-          JOptionPane.showMessageDialog(null, "Erro ao executar SQL\nERRO: " + e1.getMessage(),
-              "Banco de Dados", JOptionPane.ERROR_MESSAGE);
+          JOptionPane.showMessageDialog(null,
+              "Erro ao deletar do banco de dados SQL\nERRO: " + e1.getMessage(), "Banco de Dados",
+              JOptionPane.ERROR_MESSAGE);
         }
 
       } else
@@ -307,19 +313,13 @@ public class Product implements ActionListener {
             pst.setInt(2, (int) quantitySpinner.getValue());
             pst.setString(3, priceTextField.getText());
             pst.execute();
-            int i = table.getSelectedRow();
 
             JOptionPane.showMessageDialog(null, "Cadastro de produto realizado", "Banco de Dados",
                 JOptionPane.INFORMATION_MESSAGE);
 
-            connection.runSQL("select * from products");
-            connection.rs.last();
-
-            Object[] row = {connection.rs.getInt("product_id"), productTextField.getText(),
-                quantitySpinner.getValue(), priceTextField.getText()};
-            model.addRow(row);
-
+            updateTable();
             switchPanels(stockViewPanel);
+
           } catch (SQLException e1) {
             JOptionPane.showMessageDialog(null, "" + e1, "", JOptionPane.ERROR_MESSAGE);
           }
@@ -327,24 +327,21 @@ public class Product implements ActionListener {
       } else {
 
         try {
+          String id = idLabel.getText().substring(5, idLabel.getText().length());
 
           PreparedStatement pst = connection.conn.prepareStatement(
               "update products set product_name=?, product_stock=?, product_price=? where product_id=?");
-          pst.setString(1, productTextField.getText());
+          pst.setString(1, (String) productTextField.getText());
           pst.setInt(2, (int) quantitySpinner.getValue());
-          pst.setString(3, priceTextField.getText());
-          pst.setInt(4, connection.rs.getInt("product_id"));
+          pst.setString(3, (String) priceTextField.getText());
+          pst.setInt(4, Integer.parseInt(id));
           pst.execute();
           JOptionPane.showMessageDialog(null, "Produto " + "editado com sucesso!", "Banco de Dados",
               JOptionPane.INFORMATION_MESSAGE);
 
-          int i = table.getSelectedRow();
-
-          model.setValueAt(productTextField.getText(), i, 1);
-          model.setValueAt(quantitySpinner.getValue(), i, 2);
-          model.setValueAt(priceTextField.getText(), i, 3);
-
+          updateTable();
           switchPanels(stockViewPanel);
+
         } catch (SQLException e1) {
           JOptionPane.showMessageDialog(null,
               "Erro na edicao do produto!\nERRO: " + e1.getMessage(), "Banco de Dados",
