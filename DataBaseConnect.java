@@ -38,8 +38,14 @@ public class DataBaseConnect {
     }
   }
 
-  public void runSQL() {
-
+  public void runSQL(String sql) {
+    try {
+      stm = conn.createStatement(rs.TYPE_SCROLL_INSENSITIVE, rs.CONCUR_READ_ONLY);
+      rs = stm.executeQuery(sql);
+    } catch (SQLException e) {
+      JOptionPane.showMessageDialog(null, "Erro ao executar SQL\nERRO: " + e.getMessage(),
+          "Banco de Dados", JOptionPane.INFORMATION_MESSAGE);
+    }
   }
 }
 

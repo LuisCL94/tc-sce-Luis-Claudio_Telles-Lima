@@ -42,7 +42,6 @@ public class Product implements ActionListener {
   private JButton backButton = new JButton();
   private JButton outButton = new JButton();
   private JLabel idLabel = new JLabel();
-  private JTextField idTextField;
   private JLabel productLabel = new JLabel();
   private JTextField productTextField;
   private JLabel quantityLabel = new JLabel();
@@ -163,35 +162,29 @@ public class Product implements ActionListener {
     borderRegisterEditPanel.setBorder(border);
     borderRegisterEditPanel.setLayout(null);
     R$Label.setText("R$");
-    R$Label.setBounds(294, 157, 32, 15);
+    R$Label.setBounds(289, 203, 32, 15);
     borderRegisterEditPanel.add(R$Label);
-    priceTextField.setBounds(318, 158, 114, 20);
+    priceTextField.setBounds(310, 200, 114, 20);
     borderRegisterEditPanel.add(priceTextField);
     priceTextField.setColumns(10);
-    quantitySpinner.setBounds(110, 158, 87, 20);
+    quantitySpinner.setBounds(145, 200, 87, 20);
     borderRegisterEditPanel.add(quantitySpinner);
     quantitySpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
 
-    idTextField = new JTextField();
-    idTextField.setBounds(96, 90, 114, 20);
-    borderRegisterEditPanel.add(idTextField);
-    idTextField.setColumns(10);
-
     productTextField = new JTextField();
-    productTextField.setBounds(284, 90, 243, 20);
+    productTextField.setBounds(145, 114, 279, 20);
     borderRegisterEditPanel.add(productTextField);
     productTextField.setColumns(10);
-    productLabel.setBounds(284, 70, 243, 15);
+    productLabel.setBounds(145, 94, 243, 15);
     borderRegisterEditPanel.add(productLabel);
 
     productLabel.setText("Produto");
-    idLabel.setBounds(96, 70, 70, 15);
+    idLabel.setBounds(227, 45, 70, 15);
     borderRegisterEditPanel.add(idLabel);
-    idLabel.setText("Codigo:");
-    priceLabel.setBounds(318, 138, 112, 15);
+    priceLabel.setBounds(310, 180, 112, 15);
     borderRegisterEditPanel.add(priceLabel);
     priceLabel.setText("Preco Unitario");
-    quantityLabel.setBounds(110, 138, 98, 15);
+    quantityLabel.setBounds(145, 180, 98, 15);
     borderRegisterEditPanel.add(quantityLabel);
 
     quantityLabel.setText("Quantidade");
@@ -223,9 +216,8 @@ public class Product implements ActionListener {
 
     if (e.getSource().equals(registerButton)) {
       statusSaveRegisterEditButton = "register";
+      idLabel.setText("");
       border.setTitle("Cadastro de Produto");
-
-      idTextField.setText(null);
       productTextField.setText(null);
       quantitySpinner.setValue(0);
       priceTextField.setText(null);
@@ -234,17 +226,20 @@ public class Product implements ActionListener {
     }
 
     if (e.getSource().equals(editButton)) {
+
       statusSaveRegisterEditButton = "edit";
       int i = table.getSelectedRow();
+
       if (i >= 0) {
         border.setTitle("Edicao de Produto");
 
-        idTextField.setText(model.getValueAt(i, 0).toString());
+        idLabel.setText("Cod: " + model.getValueAt(i, 0).toString());
         productTextField.setText(model.getValueAt(i, 1).toString());
         quantitySpinner.setValue(model.getValueAt(i, 2));
         priceTextField.setText(model.getValueAt(i, 3).toString());
 
         switchPanels(productRegisterEditPanel);
+
       } else
         JOptionPane.showMessageDialog(null, "Selecione o produto que deseja editar", "",
             JOptionPane.WARNING_MESSAGE);
@@ -252,9 +247,23 @@ public class Product implements ActionListener {
 
     if (e.getSource().equals(deleteButton)) {
       int i = table.getSelectedRow();
-      if (i >= 0)
-        model.removeRow(i);
-      else
+
+      if (i >= 0) {
+        PreparedStatement pst;
+        try {
+          pst = connection.conn.prepareStatement("delete from products where product_name=?");
+          pst.setString(1, (String) model.getValueAt(i, 1));
+          pst.execute();
+          JOptionPane.showMessageDialog(null,
+              (String) model.getValueAt(i, 1) + "excluido com sucesso!", "Banco de Dados",
+              JOptionPane.INFORMATION_MESSAGE);
+          model.removeRow(i);
+        } catch (SQLException e1) {
+          JOptionPane.showMessageDialog(null, "Erro ao executar SQL\nERRO: " + e1.getMessage(),
+              "Banco de Dados", JOptionPane.ERROR_MESSAGE);
+        }
+
+      } else
         JOptionPane.showMessageDialog(null, "Selecione o produto que deseja excluir", "",
             JOptionPane.WARNING_MESSAGE);
     }
@@ -264,25 +273,28 @@ public class Product implements ActionListener {
       // int stock = (Integer)quantitySpinner.getValue();
       // int result = value * stock;
 
-      Object[] row = {idTextField.getText(), productTextField.getText(), quantitySpinner.getValue(),
-          priceTextField.getText()};
 
       if (statusSaveRegisterEditButton == "register") {
-        if (idTextField.getText().isEmpty() || productTextField.getText().isEmpty()
-            || priceTextField.getText().isEmpty()) {
+        if (productTextField.getText().isEmpty() || priceTextField.getText().isEmpty()) {
           JOptionPane.showMessageDialog(null, "Campos Vazios", "", JOptionPane.ERROR_MESSAGE);
         } else {
           try {
             PreparedStatement pst = connection.conn.prepareStatement(
-                "insert into product (product_name,product_stock,product_price)values(?,?,?)");
+                "insert into products (product_name,product_stock,product_price)values(?,?,?)");
             pst.setString(1, productTextField.getText());
             pst.setInt(2, (int) quantitySpinner.getValue());
             pst.setString(3, priceTextField.getText());
-            pst.executeUpdate();
+            pst.execute();
             int i = table.getSelectedRow();
 
-            JOptionPane.showMessageDialog(null, "Cadastro de produto realizado", "",
+            JOptionPane.showMessageDialog(null, "Cadastro de produto realizado", "Banco de Dados",
                 JOptionPane.INFORMATION_MESSAGE);
+
+            connection.runSQL("select * from products");
+            connection.rs.last();
+
+            Object[] row = {connection.rs.getInt("product_id"), productTextField.getText(),
+                quantitySpinner.getValue(), priceTextField.getText()};
             model.addRow(row);
 
             switchPanels(stockViewPanel);
@@ -291,16 +303,31 @@ public class Product implements ActionListener {
           }
         }
       } else {
-        JOptionPane.showMessageDialog(null, "Edicao de produto realizada", "",
-            JOptionPane.INFORMATION_MESSAGE);
 
-        int i = table.getSelectedRow();
-        model.setValueAt(idTextField.getText(), i, 0);
-        model.setValueAt(productTextField.getText(), i, 1);
-        model.setValueAt(quantitySpinner.getValue(), i, 2);
-        model.setValueAt(priceTextField.getText(), i, 3);
+        try {
 
-        switchPanels(stockViewPanel);
+          PreparedStatement pst = connection.conn.prepareStatement(
+              "update products set product_name=?, product_stock=?, product_price=? where product_id=?");
+          pst.setString(1, productTextField.getText());
+          pst.setInt(2, (int) quantitySpinner.getValue());
+          pst.setString(3, priceTextField.getText());
+          pst.setInt(4, connection.rs.getInt("product_id"));
+          pst.execute();
+          JOptionPane.showMessageDialog(null, "Produto " + "editado com sucesso!", "Banco de Dados",
+              JOptionPane.INFORMATION_MESSAGE);
+
+          int i = table.getSelectedRow();
+
+          model.setValueAt(productTextField.getText(), i, 1);
+          model.setValueAt(quantitySpinner.getValue(), i, 2);
+          model.setValueAt(priceTextField.getText(), i, 3);
+
+          switchPanels(stockViewPanel);
+        } catch (SQLException e1) {
+          JOptionPane.showMessageDialog(null,
+              "Erro na edicao do produto!\nERRO: " + e1.getMessage(), "Banco de Dados",
+              JOptionPane.ERROR_MESSAGE);
+        }
       }
     }
 
