@@ -37,7 +37,6 @@ public class Product implements ActionListener {
   private JButton deleteButton = new JButton();
   private JButton addStockButton = new JButton();
   private JButton removeStockButton = new JButton();
-  private JButton updateProductStockButton = new JButton();
   private JButton RegisterEditSaveButton = new JButton();
   private JButton backButton = new JButton();
   private JButton outButton = new JButton();
@@ -158,19 +157,14 @@ public class Product implements ActionListener {
     addStockButton.setIcon(new ImageIcon("Icons/add2.png"));
     addStockButton.setToolTipText("adicionar estoque");
 
-    addStockButton.setBounds(470, 413, 55, 23);
+    addStockButton.setBounds(469, 422, 40, 23);
     stockViewPanel.add(addStockButton);
 
     removeStockButton.setIcon(new ImageIcon("Icons/minus2.png"));
     removeStockButton.setToolTipText("revomer estoque");
 
-    removeStockButton.setBounds(530, 413, 55, 23);
+    removeStockButton.setBounds(530, 422, 40, 23);
     stockViewPanel.add(removeStockButton);
-    updateProductStockButton.setToolTipText("Atualizar estoque");
-
-    updateProductStockButton.setText("SALVAR");
-    updateProductStockButton.setBounds(470, 443, 115, 23);
-    stockViewPanel.add(updateProductStockButton);
 
     outButton.setText("Sair");
     outButton.setBounds(10, 481, 89, 23);
@@ -230,7 +224,7 @@ public class Product implements ActionListener {
     deleteButton.addActionListener(this);
     addStockButton.addActionListener(this);
     removeStockButton.addActionListener(this);
-    updateProductStockButton.addActionListener(this);
+
     outButton.addActionListener(this);
 
     frame.setLocationRelativeTo(null);
@@ -282,8 +276,8 @@ public class Product implements ActionListener {
           pst.setString(1, (String) model.getValueAt(i, 1));
           pst.execute();
           JOptionPane.showMessageDialog(null,
-              (String) model.getValueAt(i, 1) + " excluido com sucesso!", "Banco de Dados",
-              JOptionPane.INFORMATION_MESSAGE);
+              "Produto " + String.valueOf((int) model.getValueAt(i, 0)) + " excluido com sucesso!",
+              "Banco de Dados", JOptionPane.INFORMATION_MESSAGE);
           model.removeRow(i);
         } catch (SQLException e1) {
           JOptionPane.showMessageDialog(null,
@@ -297,10 +291,6 @@ public class Product implements ActionListener {
     }
 
     if (e.getSource().equals(RegisterEditSaveButton)) {
-      // int value = Integer.parseInt(priceTextField.getText());
-      // int stock = (Integer)quantitySpinner.getValue();
-      // int result = value * stock;
-
 
       if (statusSaveRegisterEditButton == "register") {
         if (productTextField.getText().isEmpty() || priceTextField.getText().isEmpty()) {
@@ -355,32 +345,56 @@ public class Product implements ActionListener {
     }
 
     if (e.getSource().equals(addStockButton)) {
+
       int i = table.getSelectedRow();
+
       if (i >= 0) {
         int num = Integer.parseInt(model.getValueAt(i, 2).toString());
-        model.setValueAt(++num, i, 2);
+        int id = (int) model.getValueAt(i, 0);
+        try {
+          PreparedStatement pst = connection.conn
+              .prepareStatement("update products set product_stock=? where product_id=?");
+          pst.setInt(1, ++num);
+          pst.setInt(2, id);
+          pst.execute();
+          updateTable();
+          table.setRowSelectionInterval(i, i);
+        } catch (SQLException e1) {
+          JOptionPane.showMessageDialog(null, "Erro na adicao de estoque\nERRO: " + e1.getMessage(),
+              "", JOptionPane.ERROR_MESSAGE);
+        }
+
       } else
         JOptionPane.showMessageDialog(null, "Escolha o produto para adicionar estoque", "",
             JOptionPane.WARNING_MESSAGE);
     }
 
     if (e.getSource().equals(removeStockButton)) {
+
       int i = table.getSelectedRow();
 
       if (i >= 0) {
         int num = Integer.parseInt(model.getValueAt(i, 2).toString());
-        if (num >= 1)
-          model.setValueAt(--num, i, 2);
+        int id = (int) model.getValueAt(i, 0);
+        try {
+          PreparedStatement pst = connection.conn
+              .prepareStatement("update products set product_stock=? where product_id=?");
+          pst.setInt(1, --num);
+          pst.setInt(2, id);
+          pst.execute();
+          updateTable();
+          table.setRowSelectionInterval(i, i);
+        } catch (SQLException e1) {
+          JOptionPane.showMessageDialog(null, "Erro na adicao de estoque\nERRO: " + e1.getMessage(),
+              "", JOptionPane.ERROR_MESSAGE);
+        }
+
       } else
-        JOptionPane.showMessageDialog(null, "Escolha o produto para dar baixa em estoque", "",
+        JOptionPane.showMessageDialog(null, "Escolha o produto para adicionar estoque", "",
             JOptionPane.WARNING_MESSAGE);
     }
-    if (e.getSource().equals(updateProductStockButton)) {
-      // verificar primeiramente se ouve alteracao do banco de dados (verificar se os valores de
-      // estoque na tabela estao diferentes do qu esta no banco)
-      JOptionPane.showMessageDialog(null, "Estoque de produtos atualizado!", "",
-          JOptionPane.INFORMATION_MESSAGE);
-    }
+
+
     if (e.getSource().equals(outButton)) {
       connection.disconnect();
       System.exit(0);
