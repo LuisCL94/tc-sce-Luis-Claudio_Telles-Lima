@@ -1,4 +1,3 @@
-// import java.util.logging.Logger;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -46,6 +45,28 @@ public class DataBaseConnect {
       JOptionPane.showMessageDialog(null, "Erro ao executar SQL\nERRO: " + e.getMessage(),
           "Banco de Dados", JOptionPane.INFORMATION_MESSAGE);
     }
+  }
+
+  public void fill(TableModel table) {
+    runSQL("select * from products order by product_id");
+    try {
+      rs.first();
+      do {
+        table.addRow(rs.getInt("product_id"), rs.getString("product_name"),
+            rs.getInt("product_stock"), rs.getString("product_price"));
+      } while (rs.next());
+    } catch (SQLException ex) {
+      JOptionPane.showMessageDialog(null, "ERRO ao preecher Arr " + ex, "",
+          JOptionPane.ERROR_MESSAGE);
+    }
+  }
+
+  public void refill(TableModel table) {
+    int rowCount = table.getRowCount();
+    for (int i = rowCount - 1; i >= 0; i--) {
+      table.removeRow(i);
+    }
+    this.fill(table);
   }
 }
 

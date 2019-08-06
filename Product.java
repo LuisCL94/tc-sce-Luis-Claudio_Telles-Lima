@@ -13,14 +13,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 
 public class Product implements ActionListener {
   private JFrame frame = new JFrame();
@@ -30,8 +26,7 @@ public class Product implements ActionListener {
   private JPanel productRegisterEditPanel = new JPanel();
   private JLabel lblSistemaDeControle = new JLabel();
   private JScrollPane scrollPane = new JScrollPane();
-  private JTable table = new JTable();
-  private DefaultTableModel model = new DefaultTableModel();
+  private TableModel table = new TableModel();
   private JButton registerButton = new JButton();
   private JButton editButton = new JButton();
   private JButton deleteButton = new JButton();
@@ -58,31 +53,6 @@ public class Product implements ActionListener {
     layeredPane.add(panel);
     layeredPane.repaint();
     layeredPane.revalidate();
-  }
-
-  public void fillTable() {
-    connection.runSQL("select * from products order by product_id");
-    try {
-      connection.rs.first();
-      do {
-
-        Object[] row = {connection.rs.getInt("product_id"), connection.rs.getString("product_name"),
-            connection.rs.getInt("product_stock"), connection.rs.getString("product_price")};
-        model.addRow(row);
-
-      } while (connection.rs.next());
-    } catch (SQLException ex) {
-      JOptionPane.showMessageDialog(null, "ERRO ao preecher Arr " + ex, "",
-          JOptionPane.ERROR_MESSAGE);
-    }
-  }
-
-  public void updateTable() {
-    int rowCount = model.getRowCount();
-    for (int i = rowCount - 1; i >= 0; i--) {
-      model.removeRow(i);
-    }
-    fillTable();
   }
 
   public static void main(String[] args) {
@@ -125,16 +95,7 @@ public class Product implements ActionListener {
     scrollPane.setBounds(10, 59, 616, 302);
     stockViewPanel.add(scrollPane);
 
-    Object[] columns = {"ID", "Produto", "Estoque", "R$ Preco Unitario"};
-    model.setColumnIdentifiers(columns);
-    table.setDefaultEditor(Object.class, null);
-    table.setFocusable(false);
-    table.setModel(model);
-    fillTable();
-
-    DefaultTableCellRenderer renderer =
-        (DefaultTableCellRenderer) table.getDefaultRenderer(Object.class);
-    renderer.setHorizontalAlignment(SwingConstants.CENTER);
+    connection.fill(table);
 
     scrollPane.setViewportView(table);
 
@@ -254,10 +215,10 @@ public class Product implements ActionListener {
       if (i >= 0) {
         border.setTitle("Edicao de Produto");
 
-        idLabel.setText("Cod: " + model.getValueAt(i, 0).toString());
-        productTextField.setText(model.getValueAt(i, 1).toString());
-        quantitySpinner.setValue(model.getValueAt(i, 2));
-        priceTextField.setText(model.getValueAt(i, 3).toString());
+        idLabel.setText("Cod: " + table.getValueAt(i, 0).toString());
+        productTextField.setText(table.getValueAt(i, 1).toString());
+        quantitySpinner.setValue(table.getValueAt(i, 2));
+        priceTextField.setText(table.getValueAt(i, 3).toString());
 
         switchPanels(productRegisterEditPanel);
 
@@ -273,12 +234,12 @@ public class Product implements ActionListener {
         PreparedStatement pst;
         try {
           pst = connection.conn.prepareStatement("delete from products where product_name=?");
-          pst.setString(1, (String) model.getValueAt(i, 1));
+          pst.setString(1, (String) table.getValueAt(i, 1));
           pst.execute();
           JOptionPane.showMessageDialog(null,
-              "Produto " + String.valueOf((int) model.getValueAt(i, 0)) + " excluido com sucesso!",
+              "Produto " + String.valueOf((int) table.getValueAt(i, 0)) + " excluido com sucesso!",
               "Banco de Dados", JOptionPane.INFORMATION_MESSAGE);
-          model.removeRow(i);
+          table.removeRow(i);
         } catch (SQLException e1) {
           JOptionPane.showMessageDialog(null,
               "Erro ao deletar do banco de dados SQL\nERRO: " + e1.getMessage(), "Banco de Dados",
@@ -307,7 +268,7 @@ public class Product implements ActionListener {
             JOptionPane.showMessageDialog(null, "Cadastro de produto realizado", "Banco de Dados",
                 JOptionPane.INFORMATION_MESSAGE);
 
-            updateTable();
+            connection.refill(table);
             switchPanels(stockViewPanel);
 
           } catch (SQLException e1) {
@@ -329,7 +290,7 @@ public class Product implements ActionListener {
           JOptionPane.showMessageDialog(null, "Produto " + "editado com sucesso!", "Banco de Dados",
               JOptionPane.INFORMATION_MESSAGE);
 
-          updateTable();
+          connection.refill(table);
           switchPanels(stockViewPanel);
 
         } catch (SQLException e1) {
@@ -349,15 +310,15 @@ public class Product implements ActionListener {
       int i = table.getSelectedRow();
 
       if (i >= 0) {
-        int num = Integer.parseInt(model.getValueAt(i, 2).toString());
-        int id = (int) model.getValueAt(i, 0);
+        int num = Integer.parseInt(table.getValueAt(i, 2).toString());
+        int id = (int) table.getValueAt(i, 0);
         try {
           PreparedStatement pst = connection.conn
               .prepareStatement("update products set product_stock=? where product_id=?");
           pst.setInt(1, ++num);
           pst.setInt(2, id);
           pst.execute();
-          updateTable();
+          connection.refill(table);
           table.setRowSelectionInterval(i, i);
         } catch (SQLException e1) {
           JOptionPane.showMessageDialog(null, "Erro na adicao de estoque\nERRO: " + e1.getMessage(),
@@ -374,15 +335,16 @@ public class Product implements ActionListener {
       int i = table.getSelectedRow();
 
       if (i >= 0) {
-        int num = Integer.parseInt(model.getValueAt(i, 2).toString());
-        int id = (int) model.getValueAt(i, 0);
+        int num = Integer.parseInt(table.getValueAt(i, 2).toString());
+        int id = (int) table.getValueAt(i, 0);
         try {
           PreparedStatement pst = connection.conn
               .prepareStatement("update products set product_stock=? where product_id=?");
           pst.setInt(1, --num);
           pst.setInt(2, id);
           pst.execute();
-          updateTable();
+
+          connection.refill(table);
           table.setRowSelectionInterval(i, i);
         } catch (SQLException e1) {
           JOptionPane.showMessageDialog(null, "Erro na adicao de estoque\nERRO: " + e1.getMessage(),
