@@ -1,3 +1,7 @@
+package model;
+
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -33,5 +37,29 @@ public class TableModel extends JTable {
   public Object getValueAt(int i, int j) {
     return model.getValueAt(i, j);
   }
+
+  public void loadTable(DataBaseConnect connection) {
+    connection.runSQL("select * from products order by product_id");
+    try {
+      connection.rs.first();
+      do {
+        this.addRow(connection.rs.getInt("product_id"), connection.rs.getString("product_name"),
+            connection.rs.getInt("product_stock"), connection.rs.getString("product_price"));
+      } while (connection.rs.next());
+    } catch (SQLException ex) {
+      JOptionPane.showMessageDialog(null, "ERRO ao preecher Arr " + ex, "",
+          JOptionPane.ERROR_MESSAGE);
+    }
+  }
+
+  public void reloadTable(DataBaseConnect connection) {
+    int rowCount = this.getRowCount();
+    for (int i = rowCount - 1; i >= 0; i--) {
+      this.removeRow(i);
+    }
+    this.loadTable(connection);
+  }
+
+
 }
 
